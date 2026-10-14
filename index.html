@@ -47,8 +47,52 @@
     h1 {
       font-size: 1.75rem;
       font-weight: 700;
-      margin-bottom: 2rem;
+      margin-bottom: 1.75rem;
       letter-spacing: -0.02em;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    select {
+      background: #111;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.55rem 0.9rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.7rem center;
+      padding-right: 2rem;
+      transition: border-color 0.2s;
+    }
+
+    select:focus {
+      border-color: var(--accent);
+    }
+
+    #timeSelect {
+      display: none;
+    }
+
+    #timeSelect.visible {
+      display: inline-block;
     }
 
     .status {
@@ -128,7 +172,26 @@
 <body>
   <div class="card">
     <h1>Feeling lucky?</h1>
+
+    <div class="controls">
+      <div class="control-row">
+        <select id="sortSelect" aria-label="Sort mode">
+          <option value="hot" selected>Hot</option>
+          <option value="best">Best</option>
+          <option value="top">Top</option>
+        </select>
+        <select id="timeSelect" aria-label="Time range">
+          <option value="day">Today</option>
+          <option value="week" selected>This Week</option>
+          <option value="month">This Month</option>
+          <option value="year">This Year</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+    </div>
+
     <div id="status" class="status"></div>
+
     <div class="buttons">
       <button id="luckyBtn" class="lucky" disabled>I’m Feeling Lucky</button>
       <button id="rerollBtn" class="reroll" disabled>Re-roll</button>
@@ -136,9 +199,11 @@
   </div>
 
   <script>
-    const statusEl = document.getElementById('status');
-    const luckyBtn = document.getElementById('luckyBtn');
-    const rerollBtn = document.getElementById('rerollBtn');
+    const statusEl   = document.getElementById('status');
+    const luckyBtn   = document.getElementById('luckyBtn');
+    const rerollBtn  = document.getElementById('rerollBtn');
+    const sortSelect = document.getElementById('sortSelect');
+    const timeSelect = document.getElementById('timeSelect');
 
     let subs = [];
     let previewTimeout = null;
@@ -159,9 +224,22 @@
       return subs[Math.floor(Math.random() * subs.length)];
     }
 
+    function buildUrl(sub) {
+      // sub is already "r/Something"
+      const sort = sortSelect.value;
+      if (sort === 'hot') {
+        return `https://www.reddit.com/${sub}/hot`;
+      }
+      if (sort === 'best') {
+        return `https://www.reddit.com/${sub}/best`;
+      }
+      // top
+      const t = timeSelect.value;
+      return `https://www.reddit.com/${sub}/top/?t=${t}`;
+    }
+
     function goToSub(sub) {
-      // sub is already in the form "r/Something"
-      window.location.href = `https://www.reddit.com/${sub}`;
+      window.location.href = buildUrl(sub);
     }
 
     function pickAndGo(instant = true) {
@@ -174,6 +252,14 @@
       } else {
         showStatus(sub);
         previewTimeout = setTimeout(() => goToSub(sub), 1000);
+      }
+    }
+
+    function updateTimeVisibility() {
+      if (sortSelect.value === 'top') {
+        timeSelect.classList.add('visible');
+      } else {
+        timeSelect.classList.remove('visible');
       }
     }
 
@@ -201,9 +287,11 @@
       }
     }
 
+    sortSelect.addEventListener('change', updateTimeVisibility);
     luckyBtn.addEventListener('click', () => pickAndGo(true));
     rerollBtn.addEventListener('click', () => pickAndGo(false));
 
+    updateTimeVisibility();
     loadList();
   </script>
 </body>
